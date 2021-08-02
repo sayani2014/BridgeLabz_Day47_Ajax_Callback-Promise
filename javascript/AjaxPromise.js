@@ -1,24 +1,28 @@
 /**
- * Ability to view Employee Data from JSON Server having ID, Name and Salary using AJAX 
+ * Ability to view Employee Data from JSON Server having ID, Name and Salary using AJAX and Promise
     - Run the JS code using Node Compiler
     - Run npm install xmlhttprequest
 
  * @author : SAYANI KOLEY
- * @since : 02/08/2021   
+ * @since : 02/08/2021  
  */
 
 let XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
-function makeAJAXCall(methodType, url, callback, async = true, data = null) {
-    let xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function() {
-        console.log("State Changed Called. Ready State: " +xhr.readyState+ " Status: " +xhr.status);
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200 || xhr.status === 201) {
-                callback(xhr.responseText);
-            } else if (xhr.status >= 400) {
-                console.log("Handle 400 Client Error or 500 Server Error.");
-            }
+function makePromiseCall(methodType, url, callback, async = true, data = null) {
+    return new Promise(function (resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+        console.log("State Changed Called. Ready State: " +xhr.readyState+ 
+                                                    " Status: " +xhr.status);
+        if (xhr.status.toString().match('^[2][0-9]{2}$')) {
+            resolve(xhr.responseText);
+        } else if (xhr.status.toString().match('^[4,5][0-9]{2}$')) {
+            reject ({
+                status: xhr.status,
+                statusText: xhr.statusText
+            });
+            console.log("XR Failed!");
         }
     }
     xhr.open(methodType, url, async);
@@ -28,26 +32,33 @@ function makeAJAXCall(methodType, url, callback, async = true, data = null) {
         xhr.send(JSON.stringify(data));
     } else xhr.send();
     console.log(methodType+ " request sent to the server.");
+    });
 }
 
 const getURL = "http://127.0.0.1:3000/employees/";
-function getUserDetails(data) {
-    console.log("Get User Data: " +data);
-}
-makeAJAXCall("GET", getURL, getUserDetails);
-
+makePromiseCall("GET", getURL, true) 
+    .then(responseText => {
+        console.log("Get User Data: " +responseText);
+    })
+    .catch(error => console.log("GET Error Status: "
+                    +JSON.stringify(error)));
+    
 const deleteURL = "http://127.0.0.1:3000/employees/4";
-function userDeleted(data) {
-    console.log("User Deleted: " +data);
-}
-makeAJAXCall("DELETE", deleteURL, userDeleted, false);
+makePromiseCall("DELETE", deleteURL, false) 
+    .then(responseText => {
+        console.log("User Deleted: " +responseText);
+    })
+    .catch(error => console.log("DELETE Error Status: "
+                    +JSON.stringify(error)));
 
 const postURL = "http://localhost:3000/employees";
 const emplData = {"name": "Harry","salary":"5000"};
-function userAdded(data) {
-    console.log("User Added: " +data);
-}
-makeAJAXCall("POST", postURL, userAdded, true, emplData);
+makePromiseCall("POST", postURL, true, emplData) 
+    .then(responseText => {
+        console.log("User Added: " +responseText);
+    })
+    .catch(error => console.log("POST Error Status: "
+                    +JSON.stringify(error)));
 
 /**
  * Execution steps:
@@ -62,6 +73,3 @@ makeAJAXCall("POST", postURL, userAdded, true, emplData);
 
     NOTE: Keep the json-server running while performing the HTTP operations.
  */
-
-
-
